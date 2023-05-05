@@ -9,6 +9,7 @@
 #include "structs.h"
 #include "utils.h"
 #include <iostream>
+#include <iomanip>
 
 typedef enum {
 	STATE_CONNECT,
@@ -25,10 +26,9 @@ typedef struct {
     struct sockaddr_in serv_addr;
     uint16_t server_port;
     char ip_server[20];
-    struct pollfd poll_fds[2];
-    char id_client[10];
-    char stdinbuf[100];
-    char buf[MAXBUFSZ];
+    struct pollfd poll_fds[CLIENT_POLLFDS];
+    char id_client[MAX_ID_SIZE];
+    char stdinbuf[MAX_CLIENT_COMMAND_SIZE];
     uint8_t exit_flag;
 } instance_data, *instance_data_t;
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     data.poll_fds[1].fd = data.sockfd;
     data.poll_fds[1].events = POLLIN;
 
-    data.no_fds = 2;
+    data.no_fds = CLIENT_POLLFDS;
 
     data.exit_flag = 0;
 
@@ -137,14 +137,74 @@ state_t do_poll(instance_data_t data) {
 }
 
 state_t do_received_from_server(instance_data_t data) {
-    memset(data->buf, 0, sizeof(data->buf));
+    message new_message;
+    memset(&new_message, 0, sizeof(message));
 
-    int rc = recv(data->sockfd, data->buf, MAXBUFSZ, 0);
+    int rc = recv(data->sockfd, &new_message, sizeof(message), 0);
     ASSERT(rc < 0, "receive from server failed");
 
     if (rc == 0)
         return STATE_EXIT;
 
+    if (new_message.data_type > 3)
+        return STATE_POLL;
+
+    std::cout << inet_ntoa(new_message.udp_client_addr.sin_addr);
+    std::cout << ":" << ntohs(new_message.udp_client_addr.sin_port);
+    std::cout << " - " << new_message.topic;
+
+    char sign;
+    unsigned int value;
+    unsigned short short_real;
+    unsigned char exponent;
+    double real;
+    int pow = 1;
+
+    switch (new_message.data_type) {
+        case 0:
+            std::cout << " - INT - ";
+            sign = new_message.payload[0];
+            memcpy(&value, new_message.payload + 1, sizeof(unsigned int));
+            value = ntohl(value);
+
+            if (!sign)
+                std::cout << value << std::endl;
+            else
+                std::cout << "-" << value << std::endl;
+            break;
+        case 1:
+            std::cout << " - SHORT_REAL - ";
+            memcpy(&short_real, new_message.payload, sizeof(unsigned short));
+            short_real = ntohs(short_real);
+
+            std::cout << short_real / 100 << ".";
+
+            if (short_real % 100 < 10)
+                std::cout << "0" << short_real % 100 << std::endl;
+            else
+                std::cout << short_real % 100 << std::endl;
+            break;
+        case 2:
+            std::cout << " - FLOAT - ";
+            sign = new_message.payload[0];
+            memcpy(&value, new_message.payload + 1, sizeof(unsigned int));
+            value = ntohl(value);
+            exponent = new_message.payload[5];
+
+            for (int i = 0; i < exponent; i++)
+                pow *= 10;
+            
+            real = (double) value / pow;
+
+            if(sign)
+                std::cout << "-";
+
+            printf("%.11g\n", real);
+            break;
+        case 3:
+            std::cout << " - STRING - " << new_message.payload << std::endl;
+            break;
+    }
     return STATE_POLL;
 }
 

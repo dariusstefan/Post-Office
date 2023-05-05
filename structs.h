@@ -3,23 +3,30 @@
 
 #include <stdint.h>
 #include <unordered_map>
+#include <vector>
+#include "utils.h"
 
 using namespace std;
 
-#define MAXSIZE 1551
-#define MAXBUFSZ 2000
-
-typedef struct {
-    char topic[50];
+typedef struct __attribute__ ((packed)) {
+    char topic[MAX_TOPIC_SIZE];
     uint8_t data_type;
-    char payload[1500];
+    char payload[MAX_PAYLOAD_SIZE];
 } udp_message;
+
+typedef struct __attribute__ ((packed)) {
+    struct sockaddr_in udp_client_addr;
+    char topic[MAX_TOPIC_SIZE];
+    uint8_t data_type;
+    char payload[MAX_PAYLOAD_SIZE];
+} message, *Tmessage;
 
 typedef struct {
     uint8_t connected;
     int socket;
     struct sockaddr_in addr;
     unordered_map<string, bool> *topic_sf_map;
+    vector<Tmessage> *stored_messages;
 } client, *Tclient;
 
 #endif
