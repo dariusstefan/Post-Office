@@ -163,9 +163,9 @@ Structura care se foloseste pentru a trimite mesajele catre clientii TCP:
 
 typedef struct __attribute__ ((packed)) {
     struct sockaddr_in udp_client_addr;  // adresa ip si portul clientului UDP care a scris mesajul
-    char topic[MAX_TOPIC_SIZE];
+    char topic[MAX_TOPIC_SIZE + 1];  // +1 pentru a fi sigur ca se termina sirul cu \0
     uint8_t data_type;
-    char payload[MAX_PAYLOAD_SIZE];
+    char payload[MAX_PAYLOAD_SIZE + 1];  // +1 pentru a fi sigur ca se termina sirul cu \0
 } message, *Tmessage;
 
 La primirea unui mesaj UDP serverul aloca memorie pe heap pentru un Tmessage 
