@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <unordered_map>
 #include <vector>
+#include <string>
 #include "utils.h"
 
 using namespace std;

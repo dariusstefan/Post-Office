@@ -58,6 +58,8 @@ state_t run_state(state_t cur_state, instance_data_t data) {
     return state_table[cur_state](data);
 };
 
+void recv_payload(int sockfd, void *buff, uint8_t data_type);
+
 int main(int argc, char *argv[]) {
 	instance_data data;
 
@@ -140,17 +142,20 @@ state_t do_received_from_server(instance_data_t data) {
     message new_message;
     memset(&new_message, 0, sizeof(message));
 
-    int rc = recv(data->sockfd, &new_message, sizeof(message), 0);
+    // complete header
+    int rc = recv(data->sockfd, &new_message, sizeof(message) - MAX_PAYLOAD_SIZE, 0);
     ASSERT(rc < 0, "receive from server failed");
 
     if (rc == 0)
         return STATE_EXIT;
 
-    if (rc < sizeof(message))
+    if (rc < sizeof(message) - MAX_PAYLOAD_SIZE)
         return STATE_POLL;
 
     if (new_message.data_type > 3)
         return STATE_POLL;
+
+    recv_payload(data->sockfd, &(new_message.payload), new_message.data_type);
 
     std::cout << inet_ntoa(new_message.udp_client_addr.sin_addr);
     std::cout << ":" << ntohs(new_message.udp_client_addr.sin_port);
@@ -199,7 +204,7 @@ state_t do_received_from_server(instance_data_t data) {
             
             real = (double) value / pow;
 
-            if(sign)
+            if (sign)
                 std::cout << "-";
 
             printf("%.11g\n", real);
@@ -244,4 +249,30 @@ state_t do_exit(instance_data_t data) {
     close(data->sockfd);
 
     return STATE_EXIT;
+}
+
+void recv_payload(int sockfd, void *buff, uint8_t data_type) {
+    int rc = 0;
+
+    switch (data_type) {
+        case 0:
+            rc = recv(sockfd, buff, INT_SIZE, 0);
+            ASSERT(rc < INT_SIZE, "int recv failed");
+            break;
+        case 1:
+            rc = recv(sockfd, buff, SHORT_REAL_SIZE, 0);
+            ASSERT(rc < SHORT_REAL_SIZE, "short real recv failed");
+            break;
+        case 2:
+            rc = recv(sockfd, buff, FLOAT_SIZE, 0);
+            ASSERT(rc <FLOAT_SIZE, "float recv failed");
+            break;
+        case 3:
+            rc = recv(sockfd, buff, MAX_PAYLOAD_SIZE, 0);
+            ASSERT(rc < MAX_PAYLOAD_SIZE, "string recv failed");
+            break;
+        default:
+            ASSERT(1, "invalid data type");
+            break;
+    }
 }

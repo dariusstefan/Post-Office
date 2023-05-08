@@ -86,6 +86,8 @@ state_t run_state(state_t cur_state, instance_data_t data) {
     return state_table[cur_state](data);
 };
 
+void send_message(int sockfd, Tmessage new_message);
+
 int main(int argc, char *argv[]) {
 	instance_data data;
 
@@ -200,15 +202,14 @@ state_t do_received_udp(instance_data_t data) {
     message_for_subs->data_type = new_msg.data_type;
     memcpy(message_for_subs->topic, new_msg.topic, sizeof(new_msg.topic));
     memcpy(message_for_subs->payload, new_msg.payload, sizeof(new_msg.payload));
-
+    
     int i = 0;
     for (auto client : data->clients) {
         auto iterator = client.second->topic_sf_map->find(message_for_subs->topic);
 
         if (iterator != client.second->topic_sf_map->end()) {
             if (client.second->connected) {
-                rc = send(client.second->socket, message_for_subs, sizeof(message), 0);
-                ASSERT(rc < 0, "send message to subscriber failed");
+                send_message(client.second->socket, message_for_subs);
             } else {
                 if (iterator->second == true) {
                     data->buffered_messages[message_for_subs] = ++i;
@@ -404,8 +405,7 @@ state_t do_send_stored(instance_data_t data) {
         ASSERT(1, "no client with this id");
 
     for (auto curr_message : *(client->second->stored_messages)) {
-        int rc = send(data->recv_tcp_sockfd, curr_message, sizeof(message), 0);
-        ASSERT(rc < 0, "send message to subscriber failed");
+        send_message(data->recv_tcp_sockfd, curr_message);
 
         auto iterator = data->buffered_messages.find(curr_message);
 
@@ -446,4 +446,29 @@ state_t do_exit(instance_data_t data) {
     data->socket_client_map.clear();
 
     return STATE_EXIT;
+}
+
+void send_message(int sockfd, Tmessage new_message) {
+    int rc = 0;
+    switch (new_message->data_type) {
+        case 0:
+            rc = send(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + INT_SIZE, 0);
+            ASSERT(rc < 0, "send to tcp client failed");
+            break;
+        case 1:
+            rc = send(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + SHORT_REAL_SIZE, 0);
+            ASSERT(rc < 0, "send to tcp client failed");
+            break;
+        case 2:
+            rc = send(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + FLOAT_SIZE, 0);
+            ASSERT(rc < 0, "send to tcp client failed");
+            break;
+        case 3:
+            rc = send(sockfd, new_message, sizeof(message), 0);
+            ASSERT(rc < 0, "send to tcp client failed");
+            break;
+        default:
+            break;
+    }
+    return;
 }

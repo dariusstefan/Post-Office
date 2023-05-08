@@ -11,6 +11,10 @@
 #define TRASH_SIZE 15
 #define INCREMENTAL_POLL_SIZE 10
 
+#define INT_SIZE 5
+#define SHORT_REAL_SIZE 2
+#define FLOAT_SIZE 6
+
 #define ASSERT(a, b) if((a)) { perror((b)); exit(EXIT_FAILURE); }
 
 #endif
