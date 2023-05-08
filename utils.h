@@ -22,7 +22,7 @@ int send_all(int sockfd, void *buff, size_t no_bytes, int flags) {
     size_t bytes_remaining = no_bytes;
     size_t bytes_sent = 0;
 
-    while(bytes_remaining != 0) {
+    while(bytes_remaining > 0) {
         rc = send(sockfd, (char *) buff + bytes_sent, bytes_remaining, flags);
         if (rc < 0)
             return -1;
@@ -39,7 +39,7 @@ int recv_all(int sockfd, void *buff, size_t no_bytes, int flags) {
     size_t bytes_remaining = no_bytes;
     size_t bytes_sent = 0;
 
-    while(bytes_remaining != 0) {
+    while(bytes_remaining > 0) {
         rc = recv(sockfd, (char *) buff + bytes_sent, bytes_remaining, flags);
 
         if (rc < 0)

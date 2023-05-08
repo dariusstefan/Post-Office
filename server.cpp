@@ -86,7 +86,29 @@ state_t run_state(state_t cur_state, instance_data_t data) {
     return state_table[cur_state](data);
 };
 
-void send_message(int sockfd, Tmessage new_message);
+void send_message(int sockfd, Tmessage new_message) {
+    int rc = 0;
+    switch (new_message->data_type) {
+        case 0:
+            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + INT_SIZE, 0);
+            ASSERT(rc < 0, "send int to tcp client failed");
+            break;
+        case 1:
+            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + SHORT_REAL_SIZE, 0);
+            ASSERT(rc < 0, "send short real to tcp client failed");
+            break;
+        case 2:
+            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + FLOAT_SIZE, 0);
+            ASSERT(rc < 0, "send float to tcp client failed");
+            break;
+        case 3:
+            rc = send_all(sockfd, new_message, sizeof(message), 0);
+            ASSERT(rc < 0, "send string to tcp client failed");
+            break;
+        default:
+            break;
+    }
+}
 
 int main(int argc, char *argv[]) {
 	instance_data data;
@@ -305,7 +327,7 @@ state_t do_new_connection(instance_data_t data) {
 state_t do_received_tcp(instance_data_t data) {
     memset(data->buffer, 0, sizeof(data->buffer));
 
-    int rc = recv(data->recv_tcp_sockfd, data->buffer, sizeof(data->buffer), 0);
+    int rc = recv_all(data->recv_tcp_sockfd, data->buffer, MAX_CLIENT_COMMAND_SIZE, 0);
     ASSERT(rc < 0, "recv from tcp client failed");
 
     if (rc == 0) {
@@ -366,13 +388,20 @@ state_t do_subscribe(instance_data_t data) {
         ASSERT(1, "received subscribe from disconnected client");
 
     auto iterator3 = iterator2->second->topic_sf_map->find(topic);
-    if (iterator3 != iterator2->second->topic_sf_map->end())
+    if (iterator3 != iterator2->second->topic_sf_map->end()) {
+        int notok = 0xAAAA;
+        rc = send(data->recv_tcp_sockfd, &notok, sizeof(int), 0);
+        ASSERT(rc < 0, "send ack failed");
         return STATE_POLL;
+    }
     if (sf)
         iterator2->second->topic_sf_map->insert({topic, true});
     else
         iterator2->second->topic_sf_map->insert({topic, false});
 
+    int ok = 0xBBBB;
+    rc = send(data->recv_tcp_sockfd, &ok, sizeof(int), 0);
+    ASSERT(rc < 0, "send ack failed");
     return STATE_POLL;
 }
 
@@ -390,11 +419,18 @@ state_t do_unsubscribe(instance_data_t data) {
         ASSERT(1, "received unsubscribe from disconnected client");
 
     auto iterator3 = iterator2->second->topic_sf_map->find(topic);
-    if (iterator3 == iterator2->second->topic_sf_map->end())
+    if (iterator3 == iterator2->second->topic_sf_map->end()){
+        int notok = 0xAAAA;
+        rc = send(data->recv_tcp_sockfd, &notok, sizeof(int), 0);
+        ASSERT(rc < 0, "send ack failed");
         return STATE_POLL;
+    }
         
     iterator2->second->topic_sf_map->erase(iterator3);
 
+    int ok = 0xBBBB;
+    rc = send(data->recv_tcp_sockfd, &ok, sizeof(int), 0);
+    ASSERT(rc < 0, "send ack failed");
     return STATE_POLL;
 }
 
@@ -446,29 +482,4 @@ state_t do_exit(instance_data_t data) {
     data->socket_client_map.clear();
 
     return STATE_EXIT;
-}
-
-void send_message(int sockfd, Tmessage new_message) {
-    int rc = 0;
-    switch (new_message->data_type) {
-        case 0:
-            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + INT_SIZE, 0);
-            ASSERT(rc < 0, "send int to tcp client failed");
-            break;
-        case 1:
-            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + SHORT_REAL_SIZE, 0);
-            ASSERT(rc < 0, "send short real to tcp client failed");
-            break;
-        case 2:
-            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + FLOAT_SIZE, 0);
-            ASSERT(rc < 0, "send float to tcp client failed");
-            break;
-        case 3:
-            rc = send_all(sockfd, new_message, sizeof(message), 0);
-            ASSERT(rc < 0, "send string to tcp client failed");
-            break;
-        default:
-            break;
-    }
-    return;
 }
