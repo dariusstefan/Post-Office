@@ -146,6 +146,9 @@ state_t do_received_from_server(instance_data_t data) {
     if (rc == 0)
         return STATE_EXIT;
 
+    if (rc < sizeof(message))
+        return STATE_POLL;
+
     if (new_message.data_type > 3)
         return STATE_POLL;
 
