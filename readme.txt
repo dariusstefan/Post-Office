@@ -41,7 +41,7 @@ In aceste fisiere am definit urmatorul tip de functie, care modeleaza o stare a 
 state_t state_func_t(instance_data_t data)
 
 Aceste functii primesc ca parametru un pointer catre o structura de date definita in acelasi 
-fisier, care are rolul de a tansmite datele importante legate de parametrii masinii de la o stare 
+fisier, care are rolul de a transmite datele importante legate de parametrii masinii de la o stare 
 la alta. Functiile "state_func_t" returneaza o valoare de tipul "state_t" care va identifica 
 urmatoarea stare in care trebuie sa treaca masina dupa starea curenta.
 
@@ -183,5 +183,5 @@ mesajul respectiv. Se verifica daca aceasta valoare devine 0, daca da se sterge 
 
 Am ales sa fac interpretarea payloadului unui mesaj la nivelul clientului TCP pentru a separa 
 aceasta functionalitate de server care gestioneaza deja conexiunile si dirijarea mesajelor.
-Pentru multiplexarea conexiunilor TCP si UDP si inputului de la tastatura am folosit poll, ca in
+Pentru multiplexarea conexiunilor TCP si UDP si a inputului de la tastatura am folosit poll, ca in
 laboratorul 7.
