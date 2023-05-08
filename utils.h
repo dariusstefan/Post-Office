@@ -17,4 +17,42 @@
 
 #define ASSERT(a, b) if((a)) { perror((b)); exit(EXIT_FAILURE); }
 
+int send_all(int sockfd, void *buff, size_t no_bytes, int flags) {
+    int rc = 0;
+    size_t bytes_remaining = no_bytes;
+    size_t bytes_sent = 0;
+
+    while(bytes_remaining != 0) {
+        rc = send(sockfd, (char *) buff + bytes_sent, bytes_remaining, flags);
+        if (rc < 0)
+            return -1;
+
+        bytes_sent += rc;
+        bytes_remaining -= rc;
+    }
+
+    return bytes_sent;
+}
+
+int recv_all(int sockfd, void *buff, size_t no_bytes, int flags) {
+    int rc = 0;
+    size_t bytes_remaining = no_bytes;
+    size_t bytes_sent = 0;
+
+    while(bytes_remaining != 0) {
+        rc = recv(sockfd, (char *) buff + bytes_sent, bytes_remaining, flags);
+
+        if (rc < 0)
+            return -1;
+
+        if (rc == 0)
+            return 0;
+
+        bytes_sent += rc;
+        bytes_remaining -= rc;
+    }
+
+    return bytes_sent;
+}
+
 #endif

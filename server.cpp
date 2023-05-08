@@ -452,20 +452,20 @@ void send_message(int sockfd, Tmessage new_message) {
     int rc = 0;
     switch (new_message->data_type) {
         case 0:
-            rc = send(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + INT_SIZE, 0);
-            ASSERT(rc < 0, "send to tcp client failed");
+            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + INT_SIZE, 0);
+            ASSERT(rc < 0, "send int to tcp client failed");
             break;
         case 1:
-            rc = send(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + SHORT_REAL_SIZE, 0);
-            ASSERT(rc < 0, "send to tcp client failed");
+            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + SHORT_REAL_SIZE, 0);
+            ASSERT(rc < 0, "send short real to tcp client failed");
             break;
         case 2:
-            rc = send(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + FLOAT_SIZE, 0);
-            ASSERT(rc < 0, "send to tcp client failed");
+            rc = send_all(sockfd, new_message, sizeof(message) - MAX_PAYLOAD_SIZE + FLOAT_SIZE, 0);
+            ASSERT(rc < 0, "send float to tcp client failed");
             break;
         case 3:
-            rc = send(sockfd, new_message, sizeof(message), 0);
-            ASSERT(rc < 0, "send to tcp client failed");
+            rc = send_all(sockfd, new_message, sizeof(message), 0);
+            ASSERT(rc < 0, "send string to tcp client failed");
             break;
         default:
             break;
