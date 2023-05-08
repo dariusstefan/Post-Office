@@ -61,12 +61,17 @@ state_t run_state(state_t cur_state, instance_data_t data) {
 int main(int argc, char *argv[]) {
 	instance_data data;
 
+    memset(data.ip_server, 0, sizeof(data.ip_server));
+    memset(data.id_client, 0, sizeof(data.id_client));
+
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     
     if (argc != 4) {
         printf("\n Usage: %s <id_client> <ip_server> <port_server>\n", argv[0]);
         return 1;
     }
+
+    ASSERT(strlen(argv[1]) > 10, "id too long");
 
     int rc = sscanf(argv[1], "%s", data.id_client);
     ASSERT(rc != 1, "id client read failed");

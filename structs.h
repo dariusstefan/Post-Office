@@ -16,9 +16,9 @@ typedef struct __attribute__ ((packed)) {
 
 typedef struct __attribute__ ((packed)) {
     struct sockaddr_in udp_client_addr;
-    char topic[MAX_TOPIC_SIZE];
+    char topic[MAX_TOPIC_SIZE + 1];
     uint8_t data_type;
-    char payload[MAX_PAYLOAD_SIZE];
+    char payload[MAX_PAYLOAD_SIZE + 1];
 } message, *Tmessage;
 
 typedef struct {

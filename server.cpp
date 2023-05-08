@@ -88,6 +88,9 @@ state_t run_state(state_t cur_state, instance_data_t data) {
 
 int main(int argc, char *argv[]) {
 	instance_data data;
+    memset(data.id_client, 0, sizeof(data.id_client));
+    memset(data.buffer, 0, sizeof(data.buffer));
+    memset(data.stdinbuf, 0, sizeof(data.stdinbuf));
 
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 
@@ -177,11 +180,11 @@ state_t do_poll(instance_data_t data) {
 }
 
 state_t do_check_exit(instance_data_t data) {
+    memset(data->stdinbuf, 0, sizeof(data->stdinbuf));
     fgets(data->stdinbuf, sizeof(data->stdinbuf), stdin);
     if (strcmp(data->stdinbuf, "exit\n") == 0) {
         return STATE_EXIT;
     } else {
-        memset(data->stdinbuf, 0, sizeof(data->stdinbuf));
         return STATE_POLL;
     }
 }
@@ -190,7 +193,7 @@ state_t do_received_udp(instance_data_t data) {
     struct sockaddr_in client_addr;
     socklen_t clen = sizeof(client_addr);
     udp_message new_msg;
-    memset(&new_msg.payload, 0, MAX_PAYLOAD_SIZE);
+    memset(new_msg.payload, 0, MAX_PAYLOAD_SIZE);
 
     int rc = recvfrom(data->udp_sockfd, &new_msg, sizeof(udp_message), 0, (struct sockaddr *)&client_addr, &clen);
     ASSERT(rc < 0, "recv from udp failed");
@@ -198,6 +201,10 @@ state_t do_received_udp(instance_data_t data) {
     Tmessage message_for_subs = new message;
     message_for_subs->udp_client_addr = client_addr;
     message_for_subs->data_type = new_msg.data_type;
+
+    memset(message_for_subs->topic, 0, sizeof(message_for_subs->topic));
+    memset(message_for_subs->payload, 0, sizeof(message_for_subs->payload));
+
     memcpy(message_for_subs->topic, new_msg.topic, sizeof(new_msg.topic));
     memcpy(message_for_subs->payload, new_msg.payload, sizeof(new_msg.payload));
 
@@ -352,8 +359,10 @@ state_t do_close_connection(instance_data_t data) {
 
 state_t do_subscribe(instance_data_t data) {
     char trash[TRASH_SIZE];
-    char topic[MAX_TOPIC_SIZE];
+    char topic[MAX_TOPIC_SIZE + 1];
     uint8_t sf;
+
+    memset(topic, 0, sizeof(topic));
 
     auto iterator = data->socket_client_map.find(data->recv_tcp_sockfd);
 
@@ -377,7 +386,9 @@ state_t do_subscribe(instance_data_t data) {
 
 state_t do_unsubscribe(instance_data_t data) {
     char trash[TRASH_SIZE];
-    char topic[MAX_TOPIC_SIZE];
+    char topic[MAX_TOPIC_SIZE + 1];
+
+    memset(topic, 0, sizeof(topic));
 
     auto iterator = data->socket_client_map.find(data->recv_tcp_sockfd);
 
