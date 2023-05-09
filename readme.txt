@@ -45,7 +45,7 @@ fisier, care are rolul de a tansmite datele importante legate de parametrii masi
 la alta. Functiile "state_func_t" returneaza o valoare de tipul "state_t" care va identifica 
 urmatoarea stare in care trebuie sa treaca masina dupa starea curenta.
 
-In sever.cpp avem:
+In server.cpp avem:
 
 typedef struct {
 	int udp_sockfd;  // socketul UDP unde primeste serverul mesajele
@@ -129,8 +129,6 @@ while (!data.exit_flag) {
     cur_state = run_state(cur_state, &data);
 }
 
-Am ales sa folosesc unordered_map pentru ca permite cautarea foarte rapida.
-
 Structura de client TCP:
 
 typedef struct {
@@ -168,8 +166,22 @@ typedef struct __attribute__ ((packed)) {
     char payload[MAX_PAYLOAD_SIZE];
 } message, *Tmessage;
 
+La conectarea unui client TCP la server, dupa connect si accept, clientul trimite ID-ul sau catre server,
+iar acesta il primeste si il cauta prin map-ul "clients":
+- daca nu exista o intrare cu acelasi ID se initializeaza o noua structura Tclient, 
+se adauga socketul returnat de accept in poll, se adauga o noua intrare in "clients"
+si o noua intrare in "socket_client_map"
+- daca exista deja intrarea cu acest ID se verfica daca clientul este deja conectat;
+daca se incearca reconectarea se inchide socketul returnat de accept; altfel, se 
+adauga acest socket in poll si se rescriu intrarile din map-urile interne ale serverului.
+
+La primirea unei comenzi de la un client TCP, dupa send clientul asteapta primirea unui 
+numar intreg de la server care sa-i spuna daca comanda s-a efectuat cu succes sau nu.
+In server dupa primitea comenzii, se incearca efectuarea acestuia si se trimite un numar 
+intreg catre client dupa caz: 0xAAAA pentru fail, 0xBBBB pentru succes.
+
 La primirea unui mesaj UDP serverul aloca memorie pe heap pentru un Tmessage 
-si copiaza ce a primit de clientul UDP, adaugand si adresa ip si portul acestuia.
+si copiaza ce a primit de la clientul UDP, adaugand si adresa ip si portul acestuia.
 Se trece apoi prin toti clientii pe care ii are serverul inregistrati si se verifica
 daca topicul mesajului se gaseste in dictionarul "topic_sf_map" asociat clientului.
 Daca da, se verifica daca clientul este conectat si i se trimite mesajul pe socketul 
@@ -181,7 +193,21 @@ La o eventuala reconectare a unui client se trece prin vectorul "stored_messages
 si se trimite fiecare mesaj de aici, decrementandu-se valoarea din "buffered_messages" pentru 
 mesajul respectiv. Se verifica daca aceasta valoare devine 0, daca da se sterge structura.
 
-Am ales sa fac interpretarea payloadului unui mesaj la nivelul clientului TCP pentru a separa 
-aceasta functionalitate de server care gestioneaza deja conexiunile si dirijarea mesajelor.
-Pentru multiplexarea conexiunilor TCP si UDP si inputului de la tastatura am folosit poll, ca in
-laboratorul 7.
+In utils.h am definit funciile "send_all" si "recv_all", ca in laboratorul 7, pentru a asigura
+trimiterea completa a mesajelor de la server, si respectiv primirea completa a mesajelor in 
+clientii TCP.
+
+Pentru a eficientiza trimiterea pachetelor am definit in server.cpp functia "send_message" care 
+trimite dintr-o structura Tmessage doar datele relevante:
+- se trimite mereu complet "udp_client_addr", "topic" si "data_type"
+- din payload se trimite doar un numar de bytes care sunt relevanti pentru "data_type"-ul mesajului;
+se evita trimiterea a 1500 de bytes pentru fiecare mesaj (se trimite tot payloadul numai pentru 
+stringuri), astfel incat apelul send in bucla din functia "send_all" nu afecteaza atat de mult 
+viteza aplicatiei.
+
+La primirea unui mesaj in clientul TCP, se apeleaza "recv_all" pentru dimensiunea fixa pe care 
+stim ca trebuie sa o primim de la server. Astfel, se completeaza campurile "udp_client_addr", 
+"topic" si "data_type" dintr-o noua structura message. Se apeleaza apoi "recv_payload" care 
+este definita in client.cpp. Aceasta apeleaza "recv_all" astfel incat sa primeasca complet 
+doar numarul de bytes necesar pentru tipul de date primit ca parametru ("data_type"-ul completat
+anterior). 
