@@ -177,7 +177,7 @@ adauga acest socket in poll si se rescriu intrarile din map-urile interne ale se
 
 La primirea unei comenzi de la un client TCP, dupa send clientul asteapta primirea unui 
 numar intreg de la server care sa-i spuna daca comanda s-a efectuat cu succes sau nu.
-In server dupa primitea comenzii, se incearca efectuarea acestuia si se trimite un numar 
+In server dupa primirea comenzii, se incearca efectuarea acesteia si se trimite un numar 
 intreg catre client dupa caz: 0xAAAA pentru fail, 0xBBBB pentru succes.
 
 La primirea unui mesaj UDP serverul aloca memorie pe heap pentru un Tmessage 
@@ -193,7 +193,7 @@ La o eventuala reconectare a unui client se trece prin vectorul "stored_messages
 si se trimite fiecare mesaj de aici, decrementandu-se valoarea din "buffered_messages" pentru 
 mesajul respectiv. Se verifica daca aceasta valoare devine 0, daca da se sterge structura.
 
-In utils.h am definit funciile "send_all" si "recv_all", ca in laboratorul 7, pentru a asigura
+In utils.h am definit functiile "send_all" si "recv_all", ca in laboratorul 7, pentru a asigura
 trimiterea completa a mesajelor de la server, si respectiv primirea completa a mesajelor in 
 clientii TCP.
 
@@ -210,4 +210,4 @@ stim ca trebuie sa o primim de la server. Astfel, se completeaza campurile "udp_
 "topic" si "data_type" dintr-o noua structura message. Se apeleaza apoi "recv_payload" care 
 este definita in client.cpp. Aceasta apeleaza "recv_all" astfel incat sa primeasca complet 
 doar numarul de bytes necesar pentru tipul de date primit ca parametru ("data_type"-ul completat
-anterior). 
+anterior). Clientul face apoi interpretarea payloadului dupa "data_type".

@@ -264,7 +264,7 @@ state_t do_new_connection(instance_data_t data) {
     if (iterator != data->clients.end()) {
         if (iterator->second->connected == 1) {
             close(newsockfd);
-            std::cout << "Client " << data->id_client << " already connected." << std::endl;
+            std::cout << "Client " << data->id_client << " already connected." << "\n";
             return STATE_POLL;
         } else {
             iterator->second->connected = 1;
@@ -286,7 +286,7 @@ state_t do_new_connection(instance_data_t data) {
 
             std::cout << "New client " << data->id_client;
             std::cout << " connected from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port);
-            std::cout << "." << std::endl;
+            std::cout << "." << "\n";
 
             data->recv_tcp_sockfd = newsockfd;
 
@@ -318,7 +318,7 @@ state_t do_new_connection(instance_data_t data) {
 
         std::cout << "New client " << data->id_client;
         std::cout << " connected from " << inet_ntoa(client_addr.sin_addr) << ":" << ntohs(client_addr.sin_port);
-        std::cout << "." << std::endl;
+        std::cout << "." << "\n";
 
         return STATE_POLL;
     }
@@ -348,7 +348,7 @@ state_t do_close_connection(instance_data_t data) {
     if (iterator == data->socket_client_map.end())
         ASSERT(1, "received from disconnected client");
 
-    std::cout << "Client " << iterator->second << " disconnected." << std::endl;
+    std::cout << "Client " << iterator->second << " disconnected." << "\n";
 
     int i = 0;
     for (; i < data->no_fds; i++)
@@ -389,7 +389,7 @@ state_t do_subscribe(instance_data_t data) {
 
     auto iterator3 = iterator2->second->topic_sf_map->find(topic);
     if (iterator3 != iterator2->second->topic_sf_map->end()) {
-        int notok = 0xAAAA;
+        int notok = SUB_FAIL;
         rc = send(data->recv_tcp_sockfd, &notok, sizeof(int), 0);
         ASSERT(rc < 0, "send ack failed");
         return STATE_POLL;
@@ -399,7 +399,7 @@ state_t do_subscribe(instance_data_t data) {
     else
         iterator2->second->topic_sf_map->insert({topic, false});
 
-    int ok = 0xBBBB;
+    int ok = SUB_SUCCESS;
     rc = send(data->recv_tcp_sockfd, &ok, sizeof(int), 0);
     ASSERT(rc < 0, "send ack failed");
     return STATE_POLL;
@@ -420,7 +420,7 @@ state_t do_unsubscribe(instance_data_t data) {
 
     auto iterator3 = iterator2->second->topic_sf_map->find(topic);
     if (iterator3 == iterator2->second->topic_sf_map->end()){
-        int notok = 0xAAAA;
+        int notok = UNSUB_FAIL;
         rc = send(data->recv_tcp_sockfd, &notok, sizeof(int), 0);
         ASSERT(rc < 0, "send ack failed");
         return STATE_POLL;
@@ -428,7 +428,7 @@ state_t do_unsubscribe(instance_data_t data) {
         
     iterator2->second->topic_sf_map->erase(iterator3);
 
-    int ok = 0xBBBB;
+    int ok = UNSUB_SUCCESS;
     rc = send(data->recv_tcp_sockfd, &ok, sizeof(int), 0);
     ASSERT(rc < 0, "send ack failed");
     return STATE_POLL;

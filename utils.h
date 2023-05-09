@@ -15,6 +15,12 @@
 #define SHORT_REAL_SIZE 2
 #define FLOAT_SIZE 6
 
+#define SUB_SUCCESS 0xBBBB
+#define SUB_FAIL 0xAAAA
+
+#define UNSUB_SUCCESS 0xBBBB
+#define UNSUB_FAIL 0xAAAA
+
 #define ASSERT(a, b) if((a)) { perror((b)); exit(EXIT_FAILURE); }
 
 int send_all(int sockfd, void *buff, size_t no_bytes, int flags) {

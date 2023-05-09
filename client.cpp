@@ -202,9 +202,9 @@ state_t do_received_from_server(instance_data_t data) {
             value = ntohl(value);
 
             if (!sign)
-                std::cout << value << std::endl;
+                std::cout << value << "\n";
             else
-                std::cout << "-" << value << std::endl;
+                std::cout << "-" << value << "\n";
             break;
         case 1:
             std::cout << " - SHORT_REAL - ";
@@ -214,9 +214,9 @@ state_t do_received_from_server(instance_data_t data) {
             std::cout << short_real / 100 << ".";
 
             if (short_real % 100 < 10)
-                std::cout << "0" << short_real % 100 << std::endl;
+                std::cout << "0" << short_real % 100 << "\n";
             else
-                std::cout << short_real % 100 << std::endl;
+                std::cout << short_real % 100 << "\n";
             break;
         case 2:
             std::cout << " - FLOAT - ";
@@ -236,7 +236,7 @@ state_t do_received_from_server(instance_data_t data) {
             printf("%.11g\n", real);
             break;
         case 3:
-            std::cout << " - STRING - " << new_message.payload << std::endl;
+            std::cout << " - STRING - " << new_message.payload << "\n";
             break;
     }
     return STATE_POLL;
@@ -257,8 +257,8 @@ state_t do_check_stdin(instance_data_t data) {
         rc = recv(data->sockfd, &response, sizeof(int), 0);
         ASSERT(rc < 0, "failed to recv response");
 
-        if (response == 0xBBBB)
-            std::cout << "Subscribed to topic." << std::endl;
+        if (response == SUB_SUCCESS)
+            std::cout << "Subscribed to topic." << "\n";
 
         return STATE_POLL;
     }
@@ -271,8 +271,8 @@ state_t do_check_stdin(instance_data_t data) {
         rc = recv(data->sockfd, &response, sizeof(int), 0);
         ASSERT(rc < 0, "failed to recv response");
 
-        if (response == 0xBBBB)
-            std::cout << "Unsubscribed from topic." << std::endl;
+        if (response == UNSUB_SUCCESS)
+            std::cout << "Unsubscribed from topic." << "\n";
 
         return STATE_POLL;
     }
